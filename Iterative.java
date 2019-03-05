@@ -2,7 +2,6 @@
 // that hadoop has difficulty with normall.
 // Sorting happens between the mapping and the reducing.
 // This program will implement this functionality.
-// 
 
 package org.apache.hadoop.ramapo;
 
