@@ -37,7 +37,10 @@ public class TopSalaries {
             // Remove values from the tree when we have
             // more than three values
             if (treemap.size() > 3) {
+                // for finding the highes three items
                 treemap.remove(treemap.firstKey());
+                // for finding the lowest three items
+                // treemap.remove(treemap.lastKey());
             }
 
         }
