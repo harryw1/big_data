@@ -27,14 +27,13 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class TopSalaries {
     public static class TopSalariesMap extends Mapper<LongWritable, Text, IntWritable, Text> {
         // TreeMap Object to contain and sort the data
-        // before passing it to the mapper
-        private TreeMap<Integer, Text> treemap = new TreeMap();
+        // before passing it to the reducer
+        private TreeMap<Integer, Text> treemap = new TreeMap<Integer, Text>();
 
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] linevalues = value.toString().split(",");
-            Integer val = Integer.parseInt(linevalues[1]);
 
-            treemap.put(val, new Text(linevalues[0]));
+            treemap.put(Integer.parseInt(linevalues[1]), new Text(linevalues[0]));
             // Remove values from the tree when we have
             // more than three values
             if (treemap.size() > 3) {
@@ -43,16 +42,53 @@ public class TopSalaries {
 
         }
 
+        // A cleanup means that we will wait for all mapping/reducing functions
+        // to complete before moving forward
         protected void cleanup(Context context) throws IOException, InterruptedException {
+            /*
+                for (Text x : treemap.values()){
+                    context.write(new IntWritable(0), new Text(x))
+                }
+            */
             for (Map.Entry<Integer, Text> entry : treemap.entrySet()) {
                 context.write(new IntWritable(entry.getKey()), entry.getValue());
             }
         }
+
+        /*
+         * ~~~~~~~~~~~~~~~~~~~ Solving the problem without cleanup ~~~~~~~~~~~~~~~~~~~
+         * 
+         * map{ context.write(new IntWritable(0), new Text(value)); } 
+         * reducer{ 
+         * private TreeMap<Integer, Text> treemap = new TreeMap<Integer, Text>();
+         * reduce{ 
+         * for (Text val : values){ String [] linevalues = val.toString().split(",");
+         * treemap.put(Integer.parseInt(linevalues[1], new Text(val))); if
+         * (treemap.size() > 3) { treemap.remove(treemap.firstKey()); } } for (Text x :
+         * treemap.values()){ context.write(new Text(), new Text(x)); } }
+         */
+
     }
 
     public static class TopSalariesReduce extends Reducer<IntWritable, Text, IntWritable, Text> {
+        // Incase we have multiple treemaps from the mapper
+        /*
+            private TreeMap<Integer, Text> treemap = new TreeMap<Integer, Text>();
+        */
         public void reduce(IntWritable key, Iterable<Text> values, Context context)
                 throws IOException, InterruptedException {
+            /*
+                    for (Text val : values){
+                        String [] line = val.toString().split(",");
+                        treemap.put(new Integer(Integer.parseInt(line[1])), new Text(val));
+                        if (treemap.size() > 3){
+                            treemap.remove(treemap.firstKey());
+                        }
+                    }
+                    for(Text x : treemap.values){
+                        context.write(new Text(), new Text(x));
+                    }
+            */
             for (Text val : values) {
                 context.write(key, new Text(val));
             }
